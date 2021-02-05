@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class Functions {
+	// TODO inefficient 
 	/**
 	 * https://stackoverflow.com/questions/47761383/proper-carmichael-function
 	 * @param n
@@ -43,13 +44,12 @@ public class Functions {
 	 * @param modulus of Z_modulus^*
 	 * @return Z_modulus^*
 	 */
-	private static ArrayList<BigInteger> groupElements(BigInteger modulus) {
+	public static ArrayList<BigInteger> groupElements(BigInteger modulus) {
 		LinkedList<BigInteger> elements = new LinkedList<>();
 		BigInteger element = BigInteger.ONE;
 		
-		do { // 1 in Z_n^* forall n
+		do { // 1 in Z_n^* forall n > 1
 			elements.add(element); 
-			
 		} while((element = nextGroupElement(element, modulus)) != null);
 		
 		
@@ -62,7 +62,7 @@ public class Functions {
 	 * @param modulus of Z_modulus^*
 	 * @return smallest e in Z_modulus^*: e >= a
 	 */
-	private static BigInteger nextGroupElement(BigInteger a, BigInteger modulus) {
+	public static BigInteger nextGroupElement(BigInteger a, BigInteger modulus) {
 		do {
 			if(a.compareTo(modulus) >= 0) {
 				return null;
@@ -80,7 +80,18 @@ public class Functions {
 	 * @param b
 	 * @return least common multiple
 	 */
-	public static BigInteger lcd(BigInteger a, BigInteger b) {
+	public static BigInteger lcm(BigInteger a, BigInteger b) {
 		return a.multiply(b).abs().divide(a.gcd(b));
+	}
+	
+	/**
+	 * 
+	 * @param p
+	 * @param q
+	 * @return maxmimum period of Blum-Number n = pq, which is carmichael(carmichael(pq)) = carmichael(lcd(eulerphi(p), eulerphi(q))) = carmichael(lcm(p - 1, q - 1))
+	 * 			since p and q are prime
+	 */
+	public static BigInteger maxPeriodLengthBlumBlumShub(BigInteger p, BigInteger q) {
+		return carmichael(lcm(p.subtract(BigInteger.ONE), (q.subtract(BigInteger.ONE))));
 	}
 }
