@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.Random;
 
 import generators.BlumBlumShub;
+import math.Functions;
 
 public class Analysis {
 	private Print out;
@@ -18,23 +19,26 @@ public class Analysis {
 	/**
 	 * 
 	 * @param securityParam
-	 * @param difficulty
+	 * @param difficulty the ratio of the accumulated zeroes sum_zeroes(period) and sum_ones(period) has
+	 * 		  to be greater than sum_zeroes(period)/sum_ones(period) > {@paramref difficulty})
 	 * @return
 	 */
 	private LinkedList<WeakSeed> checkEquidistributionBlumBlumShub(int securityParam, double difficulty) {
 		LinkedList<WeakSeed> ret = new LinkedList<>();
 		BlumBlumShub generator = new BlumBlumShub(securityParam);
-		BigInteger p = generator.getQ(), q = generator.getQ(), periodLength;
+		BigInteger p = generator.getQ(), q = generator.getQ(), maxPeriodLength;
 		double ratio;
 		
-		periodLength = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE)).divide(new BigInteger("4")); // varphi(pq)/4 = (p - 1)(p - 2)/4
+		maxPeriodLength = Functions.maxPeriodLengthBlumBlumShub(p, q);
 		
 		for(int i = 0; i < Constants.EQUIDISTRIBUTION_ROUNDS; i++) {
-			if((ratio = equidistribution(generator, periodLength)) > difficulty) {
-				out.println("Ratio " + ratio + " for seed " + generator.getSeed() + " with difficulty " + difficulty);
+			if((ratio = equidistribution(generator, maxPeriodLength)) > difficulty || 1/ratio > difficulty) {
+				out.println("Weak seed " + generator.getSeed() + " found with ratio " + ratio + " on difficulty " + difficulty + ".");
 				
-				ret.add(new WeakSeed(generator.getSeed(), generator.getModulus(), generator.getP(), generator.getQ(), periodLength, ratio, securityParam));
+				ret.add(new WeakSeed(generator.getSeed(), generator.getModulus(), generator.getP(), generator.getQ(), maxPeriodLength, ratio, securityParam));
 			}
+			
+			System.out.println(ratio);
 			
 			if(i % (Constants.EQUIDISTRIBUTION_ROUNDS/100) == 0) {
 				out.println((int)(Math.ceil(i/(double)Constants.EQUIDISTRIBUTION_ROUNDS * 100)) + "% of all " + Constants.EQUIDISTRIBUTION_ROUNDS + " rounds done.");
@@ -48,7 +52,6 @@ public class Analysis {
 	
 	private double equidistribution(Random generator, BigInteger periodLength) {
 		BigInteger zeroes = BigInteger.ZERO, ones = BigInteger.ONE;
-				//groupexponent = Functions.lcd(p.subtract(BigInteger.ONE), q.subtract(BigInteger.ONE)); 
 		boolean[] period, follow;
 		int index = 0;
 		
@@ -66,23 +69,21 @@ public class Analysis {
 			}
 		}
 		
-		/*index = 0;
+		index = 0;
 		
 		for(BigInteger i = BigInteger.ZERO; i.compareTo(periodLength) == -1; i = i.add(BigInteger.ONE)) {
-			if(generator.nextBit()) {
-				//ones = ones.add(BigInteger.ONE);
+			if(generator.nextBoolean()) {
 				follow[index++] = true;
 			}
 			else {
-				//zeroes = zeroes.add(BigInteger.ONE);
 				follow[index++] = false;
 			}
-		}*/
+		}
 		
 		return new BigDecimal(zeroes).divide(new BigDecimal(ones), MathContext.DECIMAL64).doubleValue();
 	}
 	
-	private boolean isPeriod(boolean[] period, boolean[] follow) {
+	/*private boolean isPeriod(boolean[] period, boolean[] follow) {
 		if(period.length != follow.length) {
 			return false;
 		}
@@ -95,7 +96,7 @@ public class Analysis {
 		}
 		
 		return true;
-	}
+	}*/
 	
 	public double checkEquidistribution(String pseudorandomGeneratorName, int securityParam, double difficulty) {
 		switch(pseudorandomGeneratorName.toLowerCase()) {
@@ -112,6 +113,6 @@ public class Analysis {
 	}
 	
 	public static void main(String[] args) {
-		new Analysis(true).checkEquidistribution("blumblumshub", 20, 2D);
+		new Analysis(true).checkEquidistribution("blumblumshub", 24, 1.5D);
 	}
 }
