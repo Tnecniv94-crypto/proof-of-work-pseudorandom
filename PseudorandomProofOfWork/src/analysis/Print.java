@@ -11,6 +11,7 @@ public class Print extends PrintStream {
 		this.dump = dump;
 	}
 	
+	@Override
 	public void println(Object print) {
 		if(dump) {
 			super.println(print);

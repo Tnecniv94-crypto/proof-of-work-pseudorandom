@@ -3,8 +3,6 @@ package generators;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import math.PrimesGenerator;
-
 
 public class BlumBlumShub extends SecureRandom {
 	/**
@@ -44,16 +42,16 @@ public class BlumBlumShub extends SecureRandom {
 	}
 	
 	public void generateSeed() {
-		//seed = new BigInteger(securityParam, Constants.millerRabinRounds, rand);
 		do {
 			seed = rand.nextRand(securityParam).mod(modulus);
-		} while(seed.gcd(modulus).compareTo(BigInteger.ONE) != 0); // ensure gcd(seed, modulus) = 1
+		} while(seed.gcd(modulus).compareTo(BigInteger.ONE) != 0 || seed.gcd(p).compareTo(BigInteger.ONE) != 0 || seed.gcd(q).compareTo(BigInteger.ONE) != 0);
+		// ensure gcd(seed, modulus) = 1 and p,q are not divisors of seed
 		
 		current = seed;
 	}
 	
 	public void changeModulus() {
-		BigInteger[] buf = primesGenerator.getRandomBlumBlumShubNumber();
+		BigInteger[] buf = primesGenerator.getRandomBlumNumber();
 		
 		modulus = buf[0];
 		p = buf[1];

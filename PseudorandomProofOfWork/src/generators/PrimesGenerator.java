@@ -1,6 +1,8 @@
-package math;
+package generators;
 
 import java.math.BigInteger;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Random;
 
 import analysis.Constants;
@@ -9,6 +11,10 @@ public class PrimesGenerator {
 	private BigInteger prime;
 	private Random rand;
 	private int bitLength, maxMillerRabinBase, 
+	 			/*
+	 			 *  determines the difference in bitLength for p and q, to ensure 2 < p/q <= Constants.MAX_BLUM_BLUM_SHUB_PQ_RATIO
+	 			 *  for Blum-Number n = pq with p = 3 mod 4 and q = 3 mod 4 and p,q prime
+	 			 */
 				maxPQRatioBitOffset = (int)Math.ceil(Math.log(Constants.MAX_BLUM_BLUM_SHUB_PQ_RATIO)/(2 * Math.log(2)));
 	private boolean firstPrime = true;
 	
@@ -25,8 +31,14 @@ public class PrimesGenerator {
 		}
 	}
 	
-	public BigInteger getRandomPrime(int congruentTo, int modulus) {
-		return randomPrime(new BigInteger(String.valueOf(congruentTo)), new BigInteger(String.valueOf(modulus)), bitLength);
+	/**
+	 * 
+	 * @param congruentTo
+	 * @param modulus
+	 * @return a random prime number p with {@link bitLength} bits and p = congruentTo mod modulus
+	 */
+	public BigInteger randomPrime(BigInteger congruentTo, BigInteger modulus) {
+		return randomPrime(congruentTo, modulus, bitLength);
 	}
 	
 	private BigInteger randomPrime(BigInteger congruentTo, BigInteger modulus, int bitLength) {
@@ -34,11 +46,9 @@ public class PrimesGenerator {
 			return null;
 		}
 		
-		//BigInteger ret = new BigInteger(bitLength, Constants.millerRabinRounds, rand);
 		BigInteger ret = BigInteger.probablePrime(bitLength, rand);
 		
 		while(ret.mod(modulus).compareTo(congruentTo) != 0) {
-			//ret = new BigInteger(bitLength, Constants.millerRabinRounds, rand);
 			ret = BigInteger.probablePrime(bitLength, rand);
 		}
 		
@@ -47,32 +57,86 @@ public class PrimesGenerator {
 	
 	/**
 	 * 
-	 * @return a Blum-Blum-Blum-Shub number n=pq with bitLength or bitLength + 1 bits on index 0,
+	 * @param congruentTo
+	 * @param modulus
+	 * @return a random prime number p with {@link bitLength} bits and p = congruentTo mod modulus and p = 2q + 1 with q prime
+	 */
+	public BigInteger randomStrongPrime(BigInteger congruentTo, BigInteger modulus) {
+		return randomStrongPrime(congruentTo, modulus, bitLength);
+	}
+	
+	private BigInteger randomStrongPrime(BigInteger congruentTo, BigInteger modulus, int bitLength) {
+		if(congruentTo.compareTo(modulus) >= 0) {
+			return null;
+		}
+		
+		BigInteger ret;
+		
+		do {
+			ret = BigInteger.probablePrime(bitLength, rand);
+			ret = ret.multiply(BigInteger.TWO).add(BigInteger.ONE);
+		} while(ret.mod(modulus).compareTo(congruentTo) != 0 || !ret.isProbablePrime(Constants.BIG_INTEGER_CERTANITY));
+		
+		return ret;
+	}
+	
+	/**
+	 * Will create {@link Constants.BLUM_NUMBER_PQ_ROUNDS} pairs of random (p,q), which are both strong primes and will
+	 * pick the pair with the smallest value of gcd((p - 3)/2, (q - 3)/2));
+	 * 
+	 * @return a Blum-number n=pq with bitLength or bitLength + 1 bits on index 0,
 	 * p = 3 mod 4 and p prime on index 1 and q = 3 mod 4 and q prime on index 2
 	 */
-	public BigInteger[] getRandomBlumBlumShubNumber() {
-		BigInteger[] ret = new BigInteger[3];
+	public BigInteger[] getRandomBlumNumber() {
+		LinkedList<BigInteger[]> pairs = new LinkedList<>();
+		Iterator<BigInteger[]> it;
+		BigInteger[] ret = new BigInteger[3], buf = null;
+		BigInteger p, q, congruentTo = new BigInteger("3"), modulus = new BigInteger("4"), smallestGcd = null, gcd;
 		// if p has at most 10 Bits more than q: p/q <= 2^10 = 1024 
-		BigInteger p, q, congruentTo = new BigInteger("3"), modulus = new BigInteger("4");
 		int bitLength = this.bitLength/2, offset = (rand.nextInt() % maxPQRatioBitOffset) + 1; //bitLengthP, bitLengthQ;
 		
 		if(bitLength - offset < 2) {
 			bitLength = 2 + offset;
 		}
 		
-		p = randomPrime(congruentTo, modulus, bitLength + offset + 1);
-		q = randomPrime(congruentTo, modulus, bitLength - offset);
+		for(int i = 0; i < Constants.BLUM_NUMBER_PQ_ROUNDS; i++) {
+			p = randomStrongPrime(congruentTo, modulus, bitLength + offset);
+			q = randomStrongPrime(congruentTo, modulus, bitLength - offset);
+			
+			buf = new BigInteger[2];
+			buf[0] = p;
+			buf[1] = q;
+			pairs.add(buf);
+		}
 		
-		/*
-		System.out.println("p has : " + p.bitLength() + " bits and should have " + (bitLength/2 + offset));
-		System.out.println("q has : " + q.bitLength() + " bits should have " + (bitLength/2 - offset));
-		System.out.println("pq has " + p.multiply(q).bitLength() + " bits and should have " + bitLength + " or " + (bitLength + 1));
-		System.out.println();
-		*/
+		buf = null;
+		it = pairs.iterator();
 		
-		ret[0] = p.multiply(q);
-		ret[1] = p;
-		ret[2] = q;
+		while(it.hasNext()) {
+			buf = it.next();
+		
+			if(smallestGcd == null) {
+				smallestGcd = buf[0].subtract(congruentTo).divide(BigInteger.TWO).gcd(buf[1].subtract(congruentTo).divide(BigInteger.TWO)); // gcd((p - 3)/2, (q - 3)/2))
+				ret[1] = buf[0];
+				ret[2] = buf[1];
+			}
+			else if((gcd = buf[0].subtract(congruentTo).divide(BigInteger.TWO).gcd(buf[1].subtract(congruentTo).divide(BigInteger.TWO))).compareTo(smallestGcd) == -1) { // smaller gcd found
+				ret[1] = buf[0];
+				ret[2] = buf[1];
+				
+				if(gcd.compareTo(BigInteger.ONE) == 0) { // better gcd than one not possible
+					ret[0] = buf[0].multiply(buf[1]);
+					
+					return ret;
+				}
+				
+				smallestGcd = gcd;
+			}
+		}
+		
+		ret[0] = buf[0].multiply(buf[1]);
+		ret[1] = buf[0];
+		ret[2] = buf[1];
 		
 		return ret;
 	}
