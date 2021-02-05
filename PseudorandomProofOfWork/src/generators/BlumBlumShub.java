@@ -5,6 +5,8 @@ import java.security.SecureRandom;
 
 import math.PrimesGenerator;
 
+// test
+
 public class BlumBlumShub extends SecureRandom {
 	/**
 	 * 
