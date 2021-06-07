@@ -3,11 +3,11 @@ package analysis;
 import java.math.BigInteger;
 
 public class WeakSeed {
-	private BigInteger seed, modulus, p, q, periodLength;
+	private BigInteger seed, modulus, p, q;
 	private double ratio;
-	private int securityParameter;
+	private int securityParameter, periodLength;
 	
-	public WeakSeed(BigInteger seed, BigInteger modulus, BigInteger p, BigInteger q, BigInteger periodLength, double ratio, int securityParameter) {
+	public WeakSeed(BigInteger seed, BigInteger modulus, BigInteger p, BigInteger q, int periodLength, double ratio, int securityParameter) {
 		this.seed = seed;
 		this.modulus = modulus;
 		this.p = p;
@@ -32,7 +32,7 @@ public class WeakSeed {
 		return q;
 	}
 	
-	public BigInteger getPeriodLength() {
+	public int getPeriodLength() {
 		return periodLength;
 	}
 	

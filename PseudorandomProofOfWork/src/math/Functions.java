@@ -91,7 +91,7 @@ public class Functions {
 	 * @return maxmimum period of Blum-Number n = pq, which is carmichael(carmichael(pq)) = carmichael(lcd(eulerphi(p), eulerphi(q))) = carmichael(lcm(p - 1, q - 1))
 	 * 			since p and q are prime
 	 */
-	public static BigInteger maxPeriodLengthBlumBlumShub(BigInteger p, BigInteger q) {
-		return carmichael(lcm(p.subtract(BigInteger.ONE), (q.subtract(BigInteger.ONE))));
+	public static int maxPeriodLengthBlumBlumShub(BigInteger p, BigInteger q) {
+		return carmichael(lcm(p.subtract(BigInteger.ONE), (q.subtract(BigInteger.ONE)))).intValue();
 	}
 }
