@@ -85,7 +85,7 @@ public class Analysis {
 				out.println((int)(Math.ceil(i/(double)Constants.EQUIDISTRIBUTION_ROUNDS * 100)) + "% of all " + Constants.EQUIDISTRIBUTION_ROUNDS + " rounds done.");
 			}
 			
-			generator.generateSeed();
+			generator.generateSeed(); // new seed
 		}
 	}
 	
@@ -135,9 +135,7 @@ public class Analysis {
 	 * @return
 	 */
 	private double equidistribution(BlumBlumShub generator, int periodLength) {
-		System.out.println("here1");
 		ArrayList<Boolean> sequence = blumBlumShubPseudorandomSequence(generator, periodLength, Constants.SEQUENCE_WINDOW_LENGTH);
-		System.out.println("here2");
 		int zeroes = 0, ones = 0;
 		
 		for(Boolean b : sequence) { // accumulate ones and zeroes
@@ -155,10 +153,11 @@ public class Analysis {
 	private ArrayList<Boolean> blumBlumShubPseudorandomSequence(BlumBlumShub generator, int periodLength, int windowSize) {
 		ArrayList<Boolean> sequence = new ArrayList<>(periodLength/2), ret = new ArrayList<>(periodLength/2);
 		String stringSequenceStart = "";
-		int maxPeriodLength = Functions.maxPeriodLengthBlumBlumShub(generator.getP(), generator.getQ()), length = 0;
 		boolean first = true;
 		
-		while(length++ < maxPeriodLength) {
+		while(true) {
+			sequence.add(generator.nextBoolean());
+			
 			if(sequence.size() > 2 * windowSize) {
 				if(first) {
 					for(int i = 0; i < windowSize; i++) {
@@ -177,12 +176,15 @@ public class Analysis {
 				}
 			}
 		}
-		
-		ret.addAll(sequence);
-		
-		return ret;
 	}
 	
+	/**
+	 * if the sequence contains a {@value Constants.SEQUENCE_WINDOW_LENGTH} long bit sequence at the and as at the start,
+	 * then the sequence is considered repeating
+	 * @param sequence
+	 * @param stringSequenceStart
+	 * @return true if the sequence repeats, false if not
+	 */
 	private boolean checkSequenceRepeats(ArrayList<Boolean> sequence, String stringSequenceStart) {
 		int windowSize = stringSequenceStart.length();
 		
